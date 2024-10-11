@@ -1,42 +1,38 @@
+import requests
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 
-# Load the CSV file
-df = pd.read_csv('another_large_random_data.csv')
+# Function to fetch data from Alpha Vantage
+def fetch_stock_data(symbol):
+    api_key = 'your_api_key'
+    url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey={api_key}&outputsize=full'
+    response = requests.get(url)
+    data = response.json()
+    
+    # Convert the JSON data to a pandas DataFrame
+    df = pd.DataFrame.from_dict(data['Time Series (Daily)'], orient='index')
+    df = df.astype(float)
+    df.index = pd.to_datetime(df.index)
+    df.columns = ['Open', 'High', 'Low', 'Close', 'Volume']
+    return df
 
-# Set the seaborn style for better visuals
-sns.set(style="whitegrid")
-
-# 1. Age Distribution
-plt.figure(figsize=(10, 6))
-sns.histplot(df['Age'], bins=20, kde=True, color='skyblue')
-plt.title('Age Distribution of Employees', fontsize=16)
-plt.xlabel('Age', fontsize=14)
-plt.ylabel('Number of Employees', fontsize=14)
+# Fetch and plot data for Apple (AAPL)
+stock_data = fetch_stock_data('AAPL')
+stock_data['Close'].plot(title='AAPL Stock Price', figsize=(10,5))
 plt.show()
 
-# 2. Annual Salary Distribution
-plt.figure(figsize=(10, 6))
-sns.histplot(df['Annual Salary'], bins=30, kde=True, color='green')
-plt.title('Annual Salary Distribution', fontsize=16)
-plt.xlabel('Salary', fontsize=14)
-plt.ylabel('Number of Employees', fontsize=14)
-plt.show()
+import plotly.graph_objects as go
 
-# 3. Employees by Department
-plt.figure(figsize=(10, 6))
-sns.countplot(y='Department', data=df, palette='Set2', order=df['Department'].value_counts().index)
-plt.title('Number of Employees by Department', fontsize=16)
-plt.xlabel('Number of Employees', fontsize=14)
-plt.ylabel('Department', fontsize=14)
-plt.show()
+def plot_candlestick(df, stock):
+    fig = go.Figure(data=[go.Candlestick(x=df.index,
+                     open=df['Open'],
+                     high=df['High'],
+                     low=df['Low'],
+                     close=df['Close'])])
+    fig.update_layout(title=f'{stock} Stock Candlestick Chart', 
+                      xaxis_title='Date',
+                      yaxis_title='Price (USD)')
+    fig.show()
 
-# 4. Salary Distribution by Department
-plt.figure(figsize=(10, 6))
-sns.boxplot(x='Department', y='Annual Salary', data=df, palette='Set3')
-plt.title('Annual Salary Distribution by Department', fontsize=16)
-plt.xlabel('Department', fontsize=14)
-plt.ylabel('Annual Salary', fontsize=14)
-plt.xticks(rotation=45)
-plt.show()
+# Plot candlestick chart for AAPL
+plot_candlestick(stock_data, 'AAPL')
